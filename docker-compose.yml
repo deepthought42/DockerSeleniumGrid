@@ -4,7 +4,7 @@ networks:
     driver: overlay
 services:
   hub:
-    image: selenium/hub
+    image: selenium/hub:3.7.1
     ports:
       - "4444:4444"
     deploy:
@@ -36,8 +36,17 @@ services:
        - HUB_PORT_4444_TCP_PORT=4444
      entrypoint: bash -c 'SE_OPTS="-host $$HOSTNAME -port 5557" /opt/bin/entry_point.sh'
 
+  firefox:
+    image: selenium/node-firefox:3.7.1
+    volumes:
+      - /dev/shm:/dev/shm
+    depends_on:
+      - hub
+    environment:
+      HUB_HOST: hub
+
   phantomjs:
-    image: selenium/node-phantomjs
+    image: selenium/node-phantomjs:3.7.1
     volumes:
       - /dev/urandom:/dev/random
       - /dev/shm:/dev/shm
@@ -52,8 +61,49 @@ services:
         delay: 30s
         max_attempts: 15
         window: 480s
-        replicas: 4
     ports:
       - "5556:5556"
+    networks:
+      - private
+
+  internet_explorer:
+    image: svidiella/selenium-node-ie
+    volumes:
+      - /dev/urandom:/dev/random
+      - /dev/shm:/dev/shm
+    depends_on:
+      - hub
+    environment:
+      - HUB_PORT_4444_TCP_ADDR=hub
+      - HUB_PORT_4444_TCP_PORT=4444
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+        max_attempts: 15
+        window: 480s
+    ports:
+      - "5557:5556"
+    networks:
+      - private
+
+  opera:
+    image:  tomfun/selenium-node-opera
+    volumes:
+      - /dev/urandom:/dev/random
+      - /dev/shm:/dev/shm
+    depends_on:
+      - hub
+    environment:
+      - HUB_PORT_4444_TCP_ADDR=hub
+      - HUB_PORT_4444_TCP_PORT=4444
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+        max_attempts: 15
+        window: 480s
+    ports:
+      - "5558:5556"
     networks:
       - private
